@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 
 interface PaymentModalProps {
     onClose: () => void;
     onConfirm: () => void;
+    title: string;
+    description: string;
+    amount?: number;
+    donationOptions?: number[];
+    allowCustomAmount?: boolean;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onConfirm }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ 
+    onClose, 
+    onConfirm, 
+    title, 
+    description, 
+    amount = 0,
+    donationOptions = [],
+    allowCustomAmount = false
+}) => {
     const [paymentMethod, setPaymentMethod] = useState<'mobile' | 'card'>('mobile');
     const [processing, setProcessing] = useState(false);
+    const [currentAmount, setCurrentAmount] = useState(amount);
+    const [customAmount, setCustomAmount] = useState('');
+
+    useEffect(() => {
+        // If donation options are provided, set the initial amount to the first option, or 0 if none.
+        if (donationOptions.length > 0) {
+            setCurrentAmount(donationOptions[0]);
+        }
+    }, [donationOptions]);
 
     const handleConfirm = () => {
         setProcessing(true);
@@ -18,20 +41,59 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onConfirm }) => {
         }, 2000);
     }
     
+    const handleAmountButtonClick = (value: number) => {
+        setCurrentAmount(value);
+        setCustomAmount('');
+    };
+
+    const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        setCustomAmount(value);
+        setCurrentAmount(Number(value));
+    };
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50" onClick={onClose}>
-            <div className="bg-brand-gray rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3" onClick={e => e.stopPropagation()}>
+            <div className="bg-brand-gray rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-w-lg" onClick={e => e.stopPropagation()}>
                 <div className="p-6">
                     <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
-                        <h2 className="text-2xl font-bold text-brand-red">Paiement de la Cotisation</h2>
+                        <h2 className="text-2xl font-bold text-brand-red">{title}</h2>
                         <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">&times;</button>
                     </div>
                     
                     <div className="space-y-4">
-                        <p className="text-gray-300">Montant : <span className="font-bold text-white">25 000 FCFA</span></p>
-                        <p className="text-gray-400 text-sm">Veuillez sélectionner votre méthode de paiement pour finaliser votre adhésion pour l'année en cours.</p>
+                        <p className="text-gray-400 text-sm">{description}</p>
                         
-                        {/* Payment method selection */}
+                        {donationOptions.length > 0 ? (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Choisir un montant</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {donationOptions.map(option => (
+                                        <button 
+                                            key={option}
+                                            onClick={() => handleAmountButtonClick(option)}
+                                            className={`p-2 rounded-md border-2 transition-colors text-sm font-semibold ${currentAmount === option && customAmount === '' ? 'bg-brand-red border-brand-red text-white' : 'border-gray-600 hover:bg-gray-800 text-gray-300'}`}
+                                        >
+                                            {option.toLocaleString('fr-FR')} FCFA
+                                        </button>
+                                    ))}
+                                </div>
+                                {allowCustomAmount && (
+                                     <div className="mt-2">
+                                         <input 
+                                             type="text" 
+                                             placeholder="Ou montant personnalisé" 
+                                             value={customAmount}
+                                             onChange={handleCustomAmountChange}
+                                             className={`w-full bg-brand-dark border-2 rounded-md shadow-sm p-2 text-center text-sm focus:ring-brand-red focus:border-brand-red ${customAmount !== '' ? 'border-brand-red' : 'border-gray-600'}`} 
+                                         />
+                                     </div>
+                                )}
+                            </div>
+                        ) : (
+                             <p className="text-gray-300">Montant : <span className="font-bold text-white">{amount.toLocaleString('fr-FR')} FCFA</span></p>
+                        )}
+                        
                         <div className="flex space-x-4">
                             <button 
                                 onClick={() => setPaymentMethod('mobile')}
@@ -47,7 +109,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onConfirm }) => {
                             </button>
                         </div>
 
-                        {/* Form fields */}
                         {paymentMethod === 'mobile' && (
                             <div>
                                 <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1">Numéro de téléphone</label>
@@ -76,10 +137,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onConfirm }) => {
                         
                          <button 
                             onClick={handleConfirm}
-                            disabled={processing}
+                            disabled={processing || currentAmount <= 0}
                             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
                         >
-                            {processing ? 'Traitement...' : 'Confirmer le Paiement'}
+                            {processing ? 'Traitement...' : `Confirmer le Paiement (${currentAmount.toLocaleString('fr-FR')} FCFA)`}
                         </button>
 
                     </div>

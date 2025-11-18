@@ -1,6 +1,7 @@
-import React from 'react';
-import { SALARY_DATA } from '../constants';
+import React, { useState, useEffect } from 'react';
+import { JobSalary } from '../types';
 import { Link } from 'react-router-dom';
+import apiClient from '../api/client';
 
 const ConditionCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <div className="bg-brand-dark p-4 rounded-lg h-full">
@@ -13,11 +14,30 @@ const ConditionCard: React.FC<{ title: string; children: React.ReactNode }> = ({
 
 
 const SalaryGridPage: React.FC = () => {
+  const [salaries, setSalaries] = useState<JobSalary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            const data = await apiClient.get('/api/salaries');
+            setSalaries(data);
+        } catch (err: any) {
+            setError(err.message || 'Une erreur est survenue.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchData();
+  }, []);
+  
   const formatCurrency = (value: number) => {
     return `${value.toLocaleString('fr-FR')} FCFA`;
   };
 
-  const categoryHeaders = SALARY_DATA[0]?.categories || [];
+  const categoryHeaders = salaries[0]?.categories || [];
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -33,33 +53,38 @@ const SalaryGridPage: React.FC = () => {
         Voici la grille des Salaires Minimums Techniciens (SMT) établie par le RETECHCI. Ces tarifs sont calculés sur une base hebdomadaire de <strong>44 heures de travail effectif</strong>. Ils représentent des minimums recommandés et peuvent être négociés à la hausse en fonction de l'ampleur du projet et de l'expérience du technicien.
       </p>
 
-      <div className="bg-brand-gray p-4 sm:p-6 rounded-lg shadow-xl overflow-x-auto">
-        <table className="w-full min-w-[800px] text-left">
-          <thead>
-            <tr className="border-b-2 border-brand-red">
-              <th className="p-4 text-lg font-bold">Poste</th>
-              {categoryHeaders.map(cat => (
-                <th key={cat.category} className="p-4 text-lg font-bold text-center">
-                    <div>Catégorie {cat.category}</div>
-                    <div className="text-sm font-normal text-gray-400">{cat.description}</div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {SALARY_DATA.map((job, index) => (
-              <tr key={job.id} className={`border-b border-gray-800 ${index % 2 === 0 ? 'bg-brand-dark' : 'bg-opacity-50'}`}>
-                <td className="p-4 font-semibold text-white">{job.jobTitle}</td>
-                {job.categories.map(cat => (
-                  <td key={cat.category} className="p-4 text-center text-gray-300 whitespace-nowrap">
-                    {formatCurrency(cat.weeklyRate)}
-                  </td>
+      {isLoading && <div className="text-center py-16 text-gray-400 text-2xl">Chargement de la grille...</div>}
+      {error && <div className="text-center py-16 text-red-500 text-2xl">Erreur : {error}</div>}
+
+      {!isLoading && !error && salaries.length > 0 && (
+          <div className="bg-brand-gray p-4 sm:p-6 rounded-lg shadow-xl overflow-x-auto">
+            <table className="w-full min-w-[800px] text-left">
+              <thead>
+                <tr className="border-b-2 border-brand-red">
+                  <th className="p-4 text-lg font-bold">Poste</th>
+                  {categoryHeaders.map(cat => (
+                    <th key={cat.category} className="p-4 text-lg font-bold text-center">
+                        <div>Catégorie {cat.category}</div>
+                        <div className="text-sm font-normal text-gray-400">{cat.description}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {salaries.map((job, index) => (
+                  <tr key={job.id} className={`border-b border-gray-800 ${index % 2 === 0 ? 'bg-brand-dark' : 'bg-opacity-50'}`}>
+                    <td className="p-4 font-semibold text-white">{job.jobTitle}</td>
+                    {job.categories.map(cat => (
+                      <td key={cat.category} className="p-4 text-center text-gray-300 whitespace-nowrap">
+                        {formatCurrency(cat.weeklyRate)}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              </tbody>
+            </table>
+          </div>
+      )}
       
        <div className="mt-12">
           <h2 className="text-2xl font-bold text-center mb-6">Conditions et Majorations</h2>

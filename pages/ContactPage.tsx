@@ -1,22 +1,32 @@
-
 import React, { useState } from 'react';
+import apiClient from '../api/client';
 
 const ContactPage: React.FC = () => {
     const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Here you would typically send the data to a server
-        console.log('Form data submitted:', formData);
-        setSubmitted(true);
-        setFormData({ name: '', email: '', subject: '', message: '' });
-        setTimeout(() => setSubmitted(false), 5000); // Reset submitted state after 5 seconds
+        setError('');
+        try {
+            await apiClient.post('/api/messages', {
+                senderName: formData.name,
+                senderEmail: formData.email,
+                subject: formData.subject,
+                message: formData.message,
+            });
+            setSubmitted(true);
+            setFormData({ name: '', email: '', subject: '', message: '' });
+        } catch (err: any) {
+            setError(err.message || 'Une erreur est survenue lors de l\'envoi du message.');
+        }
     };
+
   return (
     <div className="max-w-2xl mx-auto bg-brand-gray p-8 rounded-lg shadow-xl">
         <h1 className="text-3xl font-bold text-center mb-2">Contactez-nous</h1>
@@ -25,6 +35,12 @@ const ContactPage: React.FC = () => {
         {submitted && (
             <div className="bg-green-500 text-white p-4 rounded-md mb-6 text-center">
                 Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.
+            </div>
+        )}
+
+        {error && (
+            <div className="bg-red-500 text-white p-4 rounded-md mb-6 text-center">
+                {error}
             </div>
         )}
         
