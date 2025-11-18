@@ -79,6 +79,14 @@ const TechnicianCard: React.FC<{ technician: Technician; onClick: () => void; }>
           <div className="text-xs font-semibold py-1 px-2 bg-gray-700 text-gray-300 rounded-full self-start">
               {label}
           </div>
+          {technician.skills && technician.skills.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                  {technician.skills.slice(0, 3).map((skill, idx) => (
+                      <span key={idx} className="text-xs bg-brand-dark border border-gray-700 text-gray-300 px-2 py-1 rounded-md">{skill}</span>
+                  ))}
+                  {technician.skills.length > 3 && <span className="text-xs text-gray-500 flex items-center">+{technician.skills.length - 3}</span>}
+              </div>
+          )}
           <div className="flex-grow"></div>
           <div className="mt-4 flex justify-end">
             <AvailabilityIndicator availability={technician.availability} />
@@ -163,6 +171,7 @@ const TechniciansListPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchSkill, setSearchSkill] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [selectedTechnician, setSelectedTechnician] = useState<Technician | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -194,9 +203,13 @@ const TechniciansListPage: React.FC = () => {
     return technicians.filter(tech => {
       const matchesSearch = tech.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesSpecialty = selectedSpecialty === 'all' || tech.specialty === selectedSpecialty;
-      return matchesSearch && matchesSpecialty;
+      const matchesSkill = searchSkill === '' || (tech.skills && tech.skills.some(skill => 
+          skill.toLowerCase().includes(searchSkill.toLowerCase())
+      ));
+
+      return matchesSearch && matchesSpecialty && matchesSkill;
     });
-  }, [searchTerm, selectedSpecialty, technicians]);
+  }, [searchTerm, selectedSpecialty, searchSkill, technicians]);
 
   return (
     <div>
@@ -210,24 +223,40 @@ const TechniciansListPage: React.FC = () => {
         <DirectoryNav />
 
         <div className="bg-brand-gray p-6 rounded-lg mb-8 shadow-lg">
-            <h1 className="text-3xl font-bold mb-4 text-center">Annuaire des Techniciens</h1>
+            <h1 className="text-3xl font-bold mb-6 text-center">Annuaire des Techniciens</h1>
             <div className="flex flex-col md:flex-row gap-4">
-            <input
-                type="text"
-                placeholder="Rechercher par nom..."
-                className="w-full md:w-1/2 p-3 bg-brand-dark border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-red"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <select
-                className="w-full md:w-1/2 p-3 bg-brand-dark border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-red"
-                value={selectedSpecialty}
-                onChange={(e) => setSelectedSpecialty(e.target.value)}
-            >
-                {specialties.map(spec => (
-                    <option key={spec} value={spec}>{spec === 'all' ? 'Toutes les spécialités' : spec}</option>
-                ))}
-            </select>
+                <div className="w-full md:w-1/3">
+                    <label className="block text-gray-400 text-xs mb-1 ml-1">Recherche par nom</label>
+                    <input
+                        type="text"
+                        placeholder="Ex: Kouassi..."
+                        className="w-full p-3 bg-brand-dark border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-500 text-white"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="w-full md:w-1/3">
+                    <label className="block text-gray-400 text-xs mb-1 ml-1">Recherche par compétence</label>
+                    <input
+                        type="text"
+                        placeholder="Ex: Drone, Etalonnage..."
+                        className="w-full p-3 bg-brand-dark border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-500 text-white"
+                        value={searchSkill}
+                        onChange={(e) => setSearchSkill(e.target.value)}
+                    />
+                </div>
+                <div className="w-full md:w-1/3">
+                    <label className="block text-gray-400 text-xs mb-1 ml-1">Filtrer par métier</label>
+                    <select
+                        className="w-full p-3 bg-brand-dark border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-red text-white"
+                        value={selectedSpecialty}
+                        onChange={(e) => setSelectedSpecialty(e.target.value)}
+                    >
+                        {specialties.map(spec => (
+                            <option key={spec} value={spec}>{spec === 'all' ? 'Toutes les spécialités' : spec}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
         </div>
 

@@ -1,42 +1,51 @@
 // @ts-nocheck
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import apiRoutes from './routes';
+
+// Configuration pour les chemins dans les modules ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Création de l'application Express
 const app = express();
-const PORT = process.env.PORT || 3001; // Le port sur lequel notre serveur écoutera
+const PORT = process.env.PORT || 3001;
 
 // =================================================
 // MIDDLEWARES
-// Ce sont des fonctions qui s'exécutent sur chaque requête avant qu'elle n'atteigne nos routes.
 // =================================================
 
-// 1. CORS (Cross-Origin Resource Sharing)
-// Essentiel pour permettre à notre site web (qui tourne sur un port différent) de communiquer avec notre API.
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // Permet à n'importe quel site de faire des requêtes
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // Allow all methods
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   next();
 });
 
-// 2. JSON Parser
-// Permet à notre serveur de comprendre les données envoyées au format JSON dans le corps des requêtes (pour les POST, PUT, etc.)
 app.use(express.json());
 
 // =================================================
-// MONTAGE DES ROUTES DE L'API
+// API ROUTES
 // =================================================
-// On dit à notre application d'utiliser les routes définies dans `routes.ts`
-// pour toute requête qui commence par "/api".
-// Ex: une requête vers http://localhost:3001/api/technicians sera gérée par notre routeur.
 app.use('/api', apiRoutes);
 
+// =================================================
+// FRONTEND STATIC FILES (PRODUCTION)
+// =================================================
+// Servir les fichiers statiques du dossier 'dist' (le build de React)
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Pour toutes les autres requêtes (non-API), renvoyer l'application React (index.html)
+// C'est essentiel pour que le routage React (react-router) fonctionne
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // =================================================
 // DÉMARRAGE DU SERVEUR
 // =================================================
 app.listen(PORT, () => {
-  console.log(`🚀 Serveur RETECHCI démarré sur http://localhost:${PORT}`);
-  console.log(`✅ L'API est accessible sur http://localhost:${PORT}/api`);
+  console.log(`🚀 Serveur RETECHCI démarré sur le port ${PORT}`);
 });

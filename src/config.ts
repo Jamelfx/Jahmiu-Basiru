@@ -1,7 +1,7 @@
 // src/config.ts
-// Fichier de configuration de l'application.
+// En production, l'API est sur le même domaine, donc on laisse vide ou '/'.
+// En développement local, vite proxy souvent les requêtes, mais ici nous utilisons une config unifiée.
 
-// Pour le déploiement, remplacez 'undefined' par l'URL de votre API de production.
-// Exemple: export const API_URL = 'https://api.retechci.ci';
+const isProduction = (import.meta as any).env.PROD;
 
-export const API_URL: string | undefined = undefined;
+export const API_URL: string = isProduction ? '' : 'http://localhost:3001';

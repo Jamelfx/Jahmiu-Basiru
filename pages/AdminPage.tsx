@@ -200,7 +200,7 @@ const FinancePanel = ({ currentUser, initialTransactions, onUpdate }: { currentU
     
     const availableYears = useMemo(() => {
         const years = new Set(transactions.map(t => new Date(t.date).getFullYear()));
-        return Array.from(years).sort((a, b) => b - a);
+        return Array.from(years).sort((a: number, b: number) => b - a);
     }, [transactions]);
     
     const filteredTransactions = useMemo(() => {
@@ -213,7 +213,7 @@ const FinancePanel = ({ currentUser, initialTransactions, onUpdate }: { currentU
     }, [transactions, filterYear, filterMonth]);
     
     const totals = useMemo(() => {
-        return filteredTransactions.reduce((acc, curr) => {
+        return filteredTransactions.reduce((acc: { recettes: number; dépenses: number }, curr) => {
             if (curr.type === 'recette') acc.recettes += curr.amount;
             else acc.dépenses += curr.amount;
             return acc;
