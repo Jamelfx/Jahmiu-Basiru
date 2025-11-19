@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Technician, Availability, NewsArticle, Video, Partner } from '../types/types';
+import { Technician, Availability, NewsArticle, Video, Partner, AppEvent, ForumTopic } from '../types/types';
 import { motion, AnimatePresence, useInView, animate } from 'framer-motion';
 import ChatWidget from '../components/ChatWidget';
 import PartnersMarquee from '../components/PartnersMarquee';
@@ -174,25 +174,32 @@ const HomePage: React.FC = () => {
     const [news, setNews] = useState<NewsArticle[]>([]);
     const [videos, setVideos] = useState<Video[]>([]);
     const [partners, setPartners] = useState<Partner[]>([]);
+    const [events, setEvents] = useState<AppEvent[]>([]);
+    const [forumTopics, setForumTopics] = useState<ForumTopic[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-    const heroImage = "https://storage.googleapis.com/aistudio-project-marketplace-prod/8a64939a-14d2-45e6-a247-4f169f47a618/c527010f-7f70-492c-8828-5544fc1209b7.png";
+    // Image de techniciens sur un plateau de tournage
+    const heroImage = "https://images.unsplash.com/photo-1533488765986-dfa2a9939acd?q=80&w=2070&auto=format&fit=crop";
 
     useEffect(() => {
         const fetchAllData = async () => {
             try {
                 setIsLoading(true);
-                const [techData, newsData, videosData, partnersData] = await Promise.all([
+                const [techData, newsData, videosData, partnersData, eventsData, topicsData] = await Promise.all([
                     apiClient.get('/api/technicians'),
                     apiClient.get('/api/news'),
                     apiClient.get('/api/videos'),
                     apiClient.get('/api/partners'),
+                    apiClient.get('/api/events'),
+                    apiClient.get('/api/forum/topics'),
                 ]);
 
                 setTechnicians(techData);
                 setNews(newsData);
                 setVideos(videosData);
                 setPartners(partnersData);
+                setEvents(eventsData);
+                setForumTopics(topicsData);
 
             } catch (error) {
                 console.error("Erreur lors de la récupération des données pour la page d'accueil:", error);
@@ -206,15 +213,18 @@ const HomePage: React.FC = () => {
     
     const featuredTechnicians = technicians.slice(0, 3);
     const latestNews = news.slice(0, 2);
+    const upcomingEvents = events.slice(0, 3);
+    const recentTopics = forumTopics.slice(0, 3);
     
     return (
         <div>
             {/* Hero Section */}
             <div 
-              className="relative bg-black rounded-lg overflow-hidden shadow-2xl mb-16 h-96 text-white text-center flex flex-col justify-center items-center p-4"
+              className="relative bg-black rounded-lg overflow-hidden shadow-2xl mb-12 h-96 text-white text-center flex flex-col justify-center items-center p-4"
               style={{ backgroundImage: `url(${heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             >
-              <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+              {/* Opacité augmentée à 75% pour réduire la visibilité de l'image derrière le texte */}
+              <div className="absolute inset-0 bg-black bg-opacity-75"></div>
               <div className="relative z-10">
                 <h1 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-lg">Bienvenue au RETECHCI</h1>
                 <p className="text-lg md:text-xl max-w-2xl drop-shadow-lg">Le réseau des professionnels du cinéma et de l'audiovisuel en Côte d'Ivoire.</p>
@@ -223,6 +233,66 @@ const HomePage: React.FC = () => {
                 </Link>
               </div>
             </div>
+
+            {/* Agenda Section (NOUVEAU - PLACÉ EN HAUT) */}
+            <section className="mb-12 bg-gradient-to-br from-brand-gray to-gray-900 rounded-lg p-8 shadow-xl border border-gray-700">
+                 <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center">
+                        <span className="text-3xl mr-3">📅</span>
+                        <h2 className="text-3xl font-bold text-white">Agenda du Réseau</h2>
+                    </div>
+                    <Link to="/events" className="text-brand-red font-semibold hover:underline text-sm bg-brand-dark px-4 py-2 rounded-full">Voir tout l'agenda &rarr;</Link>
+                </div>
+                 {isLoading ? <div className="text-center">Chargement...</div> :
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {upcomingEvents.map(event => (
+                             <Link to="/events" key={event.id} className="bg-brand-dark p-4 rounded-md border-l-4 border-brand-red hover:bg-gray-800 transition-all hover:-translate-y-1 cursor-pointer">
+                                <div className="text-brand-red font-bold text-lg mb-1">{new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</div>
+                                <h3 className="font-bold text-white text-lg mb-2 line-clamp-1">{event.title}</h3>
+                                <div className="flex items-center text-gray-400 text-sm">
+                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                     <span className="truncate">{event.location}</span>
+                                </div>
+                            </Link>
+                        ))}
+                        {upcomingEvents.length === 0 && <p className="text-gray-500 col-span-3 text-center">Aucun événement à venir.</p>}
+                    </div>
+                }
+            </section>
+
+             {/* Forum Preview (NOUVEAU - PLACÉ EN HAUT) */}
+            <section className="mb-16">
+                <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+                     <div className="flex items-center">
+                         <span className="text-3xl mr-3">💬</span>
+                         <h2 className="text-3xl font-bold">Discussions Récentes</h2>
+                     </div>
+                     <Link to="/forum" className="text-brand-red font-semibold hover:underline text-sm">Accéder au Forum &rarr;</Link>
+                </div>
+                 {isLoading ? <div className="text-center">Chargement...</div> :
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {recentTopics.map(topic => (
+                             <Link to="/forum" key={topic.id} className="block bg-brand-gray p-5 rounded-lg hover:bg-gray-800 transition-colors group border border-gray-800 hover:border-brand-red">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${topic.category === 'Annonces' ? 'bg-yellow-500 text-black' : 'bg-blue-900 text-blue-200'}`}>{topic.category}</span>
+                                </div>
+                                <h3 className="font-bold text-white text-lg mb-2 group-hover:text-brand-red transition-colors line-clamp-2">{topic.title}</h3>
+                                <div className="flex items-center mt-4 text-xs text-gray-500 border-t border-gray-700 pt-3">
+                                    <div className="flex items-center flex-1">
+                                         <img src={topic.authorAvatar || `https://ui-avatars.com/api/?name=${topic.authorName}&background=random`} alt={topic.authorName} className="w-5 h-5 rounded-full mr-2" />
+                                         <span>{topic.authorName}</span>
+                                    </div>
+                                    <span className="flex items-center">
+                                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                         {topic.repliesCount}
+                                    </span>
+                                </div>
+                            </Link>
+                        ))}
+                         {recentTopics.length === 0 && <p className="text-gray-500 text-center col-span-3">Aucune discussion récente.</p>}
+                    </div>
+                }
+            </section>
 
             {/* Featured Technicians */}
             <section className="mb-16">

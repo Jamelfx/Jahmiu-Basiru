@@ -1,3 +1,4 @@
+
 export interface Film {
   title: string;
   year: number;
@@ -209,4 +210,37 @@ export interface LiveChatMessage {
   author: string;
   message: string;
   timestamp: string; // ISO String
+}
+
+// --- NOUVELLES INTERFACES POUR V2 ---
+
+export interface ForumTopic {
+  id: number;
+  title: string;
+  authorName: string;
+  authorAvatar?: string;
+  date: string;
+  category: 'Matériel' | 'Juridique' | 'Technique' | 'Divers' | 'Annonces';
+  repliesCount: number;
+  content: string;
+}
+
+export interface AppEvent {
+  id: number;
+  title: string;
+  date: string;
+  location: string;
+  type: 'Festival' | 'Formation' | 'Réunion' | 'Autre';
+  description: string;
+  imageUrl?: string;
+}
+
+export interface Notification {
+  id: number;
+  userId: number;
+  message: string;
+  date: string;
+  read: boolean;
+  type: 'info' | 'warning' | 'success';
+  link?: string;
 }

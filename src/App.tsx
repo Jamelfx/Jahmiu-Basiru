@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -24,7 +26,9 @@ import AnimatedPage from './components/AnimatedPage';
 import JoinPage from './pages/JoinPage';
 import AdminPage from './pages/AdminPage';
 import LivePage from './pages/LivePage';
-import DonationButton from './components/DonationButton'; // NOUVEAU
+import EventsPage from './pages/EventsPage';
+import ForumPage from './pages/ForumPage';
+import DonationButton from './components/DonationButton';
 
 import { Member } from './types/types';
 import apiClient from './api/client';
@@ -63,7 +67,7 @@ const AnimatedRoutes: React.FC = () => {
   };
 
   const isAdmin = currentUser?.role && currentUser.role !== 'Membre';
-  const isMemberPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin');
+  const isMemberPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin') || location.pathname.startsWith('/forum');
 
   if (authLoading) {
     return (
@@ -88,6 +92,8 @@ const AnimatedRoutes: React.FC = () => {
               <Route path="/directory/equipment" element={<AnimatedPage><EquipmentPage /></AnimatedPage>} />
               <Route path="/about" element={<AnimatedPage><AboutPage /></AnimatedPage>} />
               <Route path="/news" element={<AnimatedPage><NewsPage /></AnimatedPage>} />
+              <Route path="/events" element={<AnimatedPage><EventsPage /></AnimatedPage>} />
+              <Route path="/forum" element={<AnimatedPage><ForumPage currentUser={currentUser} /></AnimatedPage>} />
               <Route path="/conventions" element={<AnimatedPage><ConventionsPage /></AnimatedPage>} />
               <Route path="/conventions/grille-salariale" element={<AnimatedPage><SalaryGridPage /></AnimatedPage>} />
               <Route path="/conventions/contrats-types" element={<AnimatedPage><ContractTypesPage /></AnimatedPage>} />
@@ -118,9 +124,11 @@ const AnimatedRoutes: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <HashRouter>
-    <AnimatedRoutes />
-  </HashRouter>
+  <LanguageProvider>
+    <HashRouter>
+        <AnimatedRoutes />
+    </HashRouter>
+  </LanguageProvider>
 );
 
 export default App;

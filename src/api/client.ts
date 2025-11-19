@@ -1,6 +1,7 @@
+
 import { API_URL } from '../config';
 import * as mockDb from './mock-db';
-import { Film, Availability, MemberStatus, UserRole, FinancialTransaction, MembershipApplication, AdminMessage, LiveEvent } from '../types/types';
+import { Film, Availability, MemberStatus, UserRole, FinancialTransaction, MembershipApplication, AdminMessage, LiveEvent, ForumTopic } from '../types/types';
 
 // This file simulates or connects to a REST API client.
 // It allows the frontend to be developed independently of a live backend.
@@ -28,6 +29,15 @@ const mockApiClient: ApiClient = {
         throw new Error('No active session.');
     }
 
+    if (path === '/api/notifications') {
+         const token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+            const user = await mockDb.dbGetUserFromToken(token);
+            if(user) return mockDb.dbGetNotifications(user.id);
+        }
+        return [];
+    }
+
     // Public routes don't need a token
     switch (path) {
       case '/api/technicians':
@@ -52,6 +62,10 @@ const mockApiClient: ApiClient = {
         return mockDb.dbGetLiveEvent();
       case '/api/live/chat':
         return mockDb.dbGetLiveChatMessages();
+      case '/api/events':
+        return mockDb.dbGetEvents();
+      case '/api/forum/topics':
+        return mockDb.dbGetForumTopics();
       case '/api/admin/applications':
         return mockDb.dbGetAdminApplications();
       case '/api/admin/transactions':
@@ -110,6 +124,9 @@ const mockApiClient: ApiClient = {
     if (path === '/api/admin/members') {
         return mockDb.dbAddSpecialMember(data);
     }
+    if (path === '/api/forum/topics') {
+        return mockDb.dbCreateForumTopic(data as Omit<ForumTopic, 'id'|'repliesCount'|'date'>);
+    }
 
     throw new Error(`[MOCK API] Unhandled POST path: ${path}`);
   },
@@ -130,6 +147,7 @@ const mockApiClient: ApiClient = {
     const statusMemberRegex = /^\/api\/admin\/members\/(\d+)\/status$/;
     const roleMemberRegex = /^\/api\/admin\/members\/(\d+)\/role$/;
     const readMessageRegex = /^\/api\/admin\/messages\/(\d+)\/read$/;
+    const readNotifRegex = /^\/api\/notifications\/(\d+)\/read$/;
     
     let match;
 
@@ -168,6 +186,9 @@ const mockApiClient: ApiClient = {
     }
     if (match = path.match(readMessageRegex)) {
         return mockDb.dbMarkMessageAsRead(parseInt(match[1]));
+    }
+    if (match = path.match(readNotifRegex)) {
+        return mockDb.dbMarkNotificationRead(parseInt(match[1]));
     }
 
     throw new Error(`[MOCK API] Unhandled PUT path: ${path}`);
