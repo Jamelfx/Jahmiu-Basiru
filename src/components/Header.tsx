@@ -12,11 +12,13 @@ interface HeaderProps {
 }
 
 const Logo: React.FC = () => (
-    <img 
-        src="https://i.imgur.com/r4rY5pG.jpeg" 
-        alt="Logo RETECHCI" 
-        className="h-14 w-auto object-contain rounded-sm" 
-    />
+    <div className="flex items-center">
+        <img 
+            src="https://i.imgur.com/r4rY5pG.jpeg" 
+            alt="Logo RETECHCI" 
+            className="h-12 w-auto object-contain bg-white rounded-sm p-1" 
+        />
+    </div>
 );
 
 

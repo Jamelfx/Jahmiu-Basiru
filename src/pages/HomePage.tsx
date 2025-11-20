@@ -195,6 +195,9 @@ const HomePage: React.FC = () => {
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
     const { t } = useLanguage();
     
+    // Fallback image if config fails or is empty
+    const defaultHeroImage = "https://images.unsplash.com/photo-1585676623395-ad1d493f968c?q=80&w=2070&auto=format&fit=crop";
+
     useEffect(() => {
         const fetchAllData = async () => {
             try {
@@ -226,8 +229,8 @@ const HomePage: React.FC = () => {
     const featuredTechnicians = technicians.slice(0, 3);
     const latestNews = news.slice(0, 2);
     
-    // Fallback image if config fails or is empty
-    const heroImageUrl = siteConfig.heroImageUrl || "https://images.unsplash.com/photo-1585676623395-ad1d493f968c?q=80&w=2070&auto=format&fit=crop";
+    // Use config image if available, otherwise use the default fallback immediately
+    const heroImageUrl = siteConfig.heroImageUrl || defaultHeroImage;
 
     return (
         <div className="relative">
