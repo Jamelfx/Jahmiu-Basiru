@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import apiClient from '../api/client';
@@ -35,9 +36,10 @@ const InterestModal: React.FC<InterestModalProps> = ({ itemName, onClose }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4" onClick={onClose}>
             <motion.div 
-                initial={{ y: -50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 50, opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="bg-brand-gray rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3" 
                 onClick={e => e.stopPropagation()}
             >

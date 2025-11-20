@@ -244,3 +244,9 @@ export interface Notification {
   type: 'info' | 'warning' | 'success';
   link?: string;
 }
+
+export interface SiteConfig {
+  heroImageUrl: string;
+  heroTitle: string;
+  heroSubtitle: string;
+}

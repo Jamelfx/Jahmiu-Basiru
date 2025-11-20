@@ -5,7 +5,7 @@ import { Technician, Availability, Film, JobSalary } from '../types/types';
 import DirectoryNav from '../components/DirectoryNav';
 import InterestModal from '../components/InterestModal';
 import CachetIndex, { calculateCachetScore, getCachetLevel } from '../components/CachetIndex';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import apiClient from '../api/client';
 
 const AvailabilityIndicator: React.FC<{ availability: Availability; showText?: boolean }> = ({ availability, showText = false }) => {
@@ -68,8 +68,10 @@ const TechnicianCard: React.FC<{ technician: Technician; onClick: () => void; }>
     const { label } = getCachetLevel(score);
 
     return (
-      <div 
-        className="bg-brand-gray rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 cursor-pointer flex flex-col"
+      <motion.div 
+        whileHover={{ y: -5, scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+        className="bg-brand-gray rounded-lg overflow-hidden shadow-lg cursor-pointer flex flex-col"
         onClick={onClick}
       >
         <img className="w-full h-64 object-cover" src={technician.avatarUrl} alt={technician.name} />
@@ -92,7 +94,7 @@ const TechnicianCard: React.FC<{ technician: Technician; onClick: () => void; }>
             <AvailabilityIndicator availability={technician.availability} />
           </div>
         </div>
-      </div>
+      </motion.div>
     );
 };
 
@@ -101,7 +103,14 @@ const ProfileModal: React.FC<{ technician: Technician | null; onClose: () => voi
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-brand-gray rounded-lg shadow-xl w-11/12 md:w-3/4 lg:w-2/3 max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                className="bg-brand-gray rounded-lg shadow-xl w-11/12 md:w-3/4 lg:w-2/3 max-w-4xl max-h-[90vh] overflow-y-auto" 
+                onClick={e => e.stopPropagation()}
+            >
                 <div className="p-6 md:p-8">
                     <div className="flex justify-between items-start mb-4">
                         <div>
@@ -159,7 +168,7 @@ const ProfileModal: React.FC<{ technician: Technician | null; onClose: () => voi
                         </ul>
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

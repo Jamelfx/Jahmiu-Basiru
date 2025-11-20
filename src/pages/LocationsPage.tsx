@@ -4,13 +4,17 @@ import { Link } from 'react-router-dom';
 import { IVORY_COAST_DISTRICTS } from '../constants/constants';
 import { Location } from '../types/types';
 import IvoryCoastMap from '../components/IvoryCoastMap';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import InterestModal from '../components/InterestModal';
 import DirectoryNav from '../components/DirectoryNav';
 import apiClient from '../api/client';
 
 const LocationCard: React.FC<{ location: Location; onInterestClick: () => void; }> = ({ location, onInterestClick }) => (
-  <div className="bg-brand-gray rounded-lg overflow-hidden shadow-lg flex flex-col transform hover:-translate-y-1 transition-transform duration-300">
+  <motion.div 
+    whileHover={{ y: -5, scale: 1.02 }}
+    transition={{ duration: 0.2 }}
+    className="bg-brand-gray rounded-lg overflow-hidden shadow-lg flex flex-col"
+  >
     <img className="w-full h-56 object-cover" src={location.imageUrl} alt={location.name} />
     <div className="p-4 flex flex-col flex-grow">
       <div className="flex-grow">
@@ -32,7 +36,7 @@ const LocationCard: React.FC<{ location: Location; onInterestClick: () => void; 
         </button>
       </div>
     </div>
-  </div>
+  </motion.div>
 );
 
 const LocationsPage: React.FC = () => {

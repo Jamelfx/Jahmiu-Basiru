@@ -1,5 +1,5 @@
 
-import { Member, NewsArticle, Video, Partner, Location, Costume, Prop, RentalCompany, JobSalary, MembershipApplication, FinancialTransaction, AdminMessage, Availability, ApplicationStatus, LiveEvent, LiveChatMessage, AppEvent, ForumTopic, Notification } from '../types/types';
+import { Member, NewsArticle, Video, Partner, Location, Costume, Prop, RentalCompany, JobSalary, MembershipApplication, FinancialTransaction, AdminMessage, Availability, ApplicationStatus, LiveEvent, LiveChatMessage, AppEvent, ForumTopic, Notification, SiteConfig } from '../types/types';
 
 // FIX: Changed type to Member[] to include passwordHash, and cast the initial array to Omit<Member, 'passwordHash'>[] to fix type inference on properties like `role`.
 export const TECHNICIANS_DATA: Member[] = ([
@@ -196,8 +196,15 @@ export const FORUM_TOPICS_DATA: ForumTopic[] = [
     { id: 3, title: 'Nouveaux tarifs syndicaux 2024', authorName: 'Aya Koné', authorAvatar: 'https://picsum.photos/seed/aya/50', date: '2024-07-25T09:00:00Z', category: 'Juridique', repliesCount: 12, content: "Voici le document récapitulatif des nouveaux tarifs négociés avec les producteurs..." },
 ];
 
+// TEST DATA: Updated notifications with current date to ensure they appear as 'new'
 export const NOTIFICATIONS_DATA: Notification[] = [
-    { id: 1, userId: 1, message: 'Nouveau message dans le forum : "Tarifs syndicaux"', date: '2024-08-03T08:30:00Z', read: false, type: 'info' },
-    { id: 2, userId: 1, message: 'Rappel : Votre cotisation annuelle arrive à échéance.', date: '2024-08-01T10:00:00Z', read: true, type: 'warning', link: '/dashboard' },
-    { id: 3, userId: 1, message: 'L\'événement "Formation Étalonnage" approche.', date: '2024-07-30T15:00:00Z', read: true, type: 'info', link: '/events' },
+    { id: 101, userId: 1, message: 'TEST: CONVOCATION Bureau Exécutif ce soir.', date: new Date().toISOString(), read: false, type: 'warning', link: '/dashboard' },
+    { id: 102, userId: 1, message: 'TEST: Rappel de cotisation annuelle.', date: new Date().toISOString(), read: false, type: 'warning', link: '/dashboard' },
+    { id: 103, userId: 1, message: 'Nouveau message de l\'administration.', date: new Date(Date.now() - 172800000).toISOString(), read: true, type: 'info', link: '/dashboard' },
 ];
+
+export const SITE_CONFIG_DATA: SiteConfig = {
+  heroImageUrl: "https://images.unsplash.com/photo-1585676623395-ad1d493f968c?q=80&w=2070&auto=format&fit=crop",
+  heroTitle: "Bienvenue au RETECHCI",
+  heroSubtitle: "Le réseau des professionnels du cinéma et de l'audiovisuel en Côte d'Ivoire."
+};

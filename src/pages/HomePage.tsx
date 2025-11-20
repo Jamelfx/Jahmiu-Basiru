@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Technician, Availability, NewsArticle, Video, Partner, AppEvent, ForumTopic } from '../types/types';
+import { Technician, Availability, NewsArticle, Video, Partner, SiteConfig } from '../types/types';
 import { motion, AnimatePresence, useInView, animate } from 'framer-motion';
 import ChatWidget from '../components/ChatWidget';
 import PartnersMarquee from '../components/PartnersMarquee';
 import apiClient from '../api/client';
+import { useLanguage } from '../contexts/LanguageContext';
+import { SITE_CONFIG_DATA } from '../api/mock-data';
 
 const AvailabilityIndicator: React.FC<{ availability: Availability }> = ({ availability }) => {
   const baseClasses = "h-3 w-3 rounded-full inline-block mr-2";
@@ -25,7 +27,11 @@ const AvailabilityIndicator: React.FC<{ availability: Availability }> = ({ avail
 };
 
 const TechnicianCard: React.FC<{ technician: Technician }> = ({ technician }) => (
-    <div className="bg-brand-gray rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
+    <motion.div 
+        whileHover={{ y: -8, scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+        className="bg-brand-gray rounded-lg overflow-hidden shadow-lg cursor-pointer"
+    >
         <img className="w-full h-56 object-cover" src={technician.avatarUrl} alt={technician.name} />
         <div className="p-4">
             <h3 className="text-xl font-bold text-white">{technician.name}</h3>
@@ -35,23 +41,29 @@ const TechnicianCard: React.FC<{ technician: Technician }> = ({ technician }) =>
                 {technician.availability}
             </div>
         </div>
-    </div>
+    </motion.div>
 );
 
 const NewsCard: React.FC<{ article: NewsArticle }> = ({ article }) => (
-    <div className="bg-brand-gray rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
+    <motion.div 
+        whileHover={{ y: -8, scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+        className="bg-brand-gray rounded-lg overflow-hidden shadow-lg cursor-pointer"
+    >
         <img className="w-full h-56 object-cover" src={article.imageUrl} alt={article.title} />
         <div className="p-4">
             <p className="text-sm text-gray-400 mb-1">{new Date(article.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             <h3 className="text-xl font-bold text-white mb-2">{article.title}</h3>
             <p className="text-gray-300 text-sm line-clamp-3">{article.summary}</p>
         </div>
-    </div>
+    </motion.div>
 );
 
 const VideoCard: React.FC<{ video: Video; onClick: () => void }> = ({ video, onClick }) => (
-    <div 
-      className="bg-brand-gray rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
+    <motion.div 
+      whileHover={{ y: -8, scale: 1.02 }}
+      transition={{ duration: 0.2 }}
+      className="bg-brand-gray rounded-lg overflow-hidden shadow-lg cursor-pointer group"
       onClick={onClick}
     >
         <div className="relative">
@@ -66,7 +78,7 @@ const VideoCard: React.FC<{ video: Video; onClick: () => void }> = ({ video, onC
         <div className="p-4">
             <h3 className="text-md font-bold text-white line-clamp-2">{video.title}</h3>
         </div>
-    </div>
+    </motion.div>
 );
 
 const VideoModal: React.FC<{ video: Video; onClose: () => void }> = ({ video, onClose }) => (
@@ -78,9 +90,10 @@ const VideoModal: React.FC<{ video: Video; onClose: () => void }> = ({ video, on
         onClick={onClose}
     >
         <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
+            initial={{ y: 20, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 20, opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
             className="relative bg-brand-dark rounded-lg shadow-xl w-full max-w-4xl overflow-hidden"
             onClick={e => e.stopPropagation()}
         >
@@ -126,13 +139,16 @@ const AnimatedStat: React.FC<{ value: number; suffix?: string; }> = ({ value, su
 
 
 const StatCard: React.FC<{ value: number; label: string; suffix?: string; icon: React.ReactNode; }> = ({ value, label, suffix, icon }) => (
-    <div className="bg-brand-gray p-8 rounded-lg text-center flex flex-col items-center">
+    <motion.div 
+        whileHover={{ scale: 1.05 }}
+        className="bg-brand-gray p-8 rounded-lg text-center flex flex-col items-center"
+    >
         <div className="text-brand-red mb-4">{icon}</div>
         <div className="text-6xl lg:text-7xl font-extrabold text-white" style={{ lineHeight: '1' }}>
              <AnimatedStat value={value} suffix={suffix} />
         </div>
         <p className="text-gray-400 mt-2 text-lg">{label}</p>
-    </div>
+    </motion.div>
 );
 
 
@@ -174,32 +190,28 @@ const HomePage: React.FC = () => {
     const [news, setNews] = useState<NewsArticle[]>([]);
     const [videos, setVideos] = useState<Video[]>([]);
     const [partners, setPartners] = useState<Partner[]>([]);
-    const [events, setEvents] = useState<AppEvent[]>([]);
-    const [forumTopics, setForumTopics] = useState<ForumTopic[]>([]);
+    const [siteConfig, setSiteConfig] = useState<SiteConfig>(SITE_CONFIG_DATA);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-    // Image de techniciens sur un plateau de tournage
-    const heroImage = "https://images.unsplash.com/photo-1533488765986-dfa2a9939acd?q=80&w=2070&auto=format&fit=crop";
-
+    const { t } = useLanguage();
+    
     useEffect(() => {
         const fetchAllData = async () => {
             try {
                 setIsLoading(true);
-                const [techData, newsData, videosData, partnersData, eventsData, topicsData] = await Promise.all([
+                const [techData, newsData, videosData, partnersData, configData] = await Promise.all([
                     apiClient.get('/api/technicians'),
                     apiClient.get('/api/news'),
                     apiClient.get('/api/videos'),
                     apiClient.get('/api/partners'),
-                    apiClient.get('/api/events'),
-                    apiClient.get('/api/forum/topics'),
+                    apiClient.get('/api/config'),
                 ]);
 
                 setTechnicians(techData);
                 setNews(newsData);
                 setVideos(videosData);
                 setPartners(partnersData);
-                setEvents(eventsData);
-                setForumTopics(topicsData);
+                if (configData) setSiteConfig(configData);
 
             } catch (error) {
                 console.error("Erreur lors de la récupération des données pour la page d'accueil:", error);
@@ -213,100 +225,46 @@ const HomePage: React.FC = () => {
     
     const featuredTechnicians = technicians.slice(0, 3);
     const latestNews = news.slice(0, 2);
-    const upcomingEvents = events.slice(0, 3);
-    const recentTopics = forumTopics.slice(0, 3);
     
+    // Fallback image if config fails or is empty
+    const heroImageUrl = siteConfig.heroImageUrl || "https://images.unsplash.com/photo-1585676623395-ad1d493f968c?q=80&w=2070&auto=format&fit=crop";
+
     return (
-        <div>
+        <div className="relative">
             {/* Hero Section */}
             <div 
-              className="relative bg-black rounded-lg overflow-hidden shadow-2xl mb-12 h-96 text-white text-center flex flex-col justify-center items-center p-4"
-              style={{ backgroundImage: `url(${heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+              className="relative bg-black rounded-lg overflow-hidden shadow-2xl mb-16 h-96 text-white text-center flex flex-col justify-center items-center p-4 z-0"
+              style={{ 
+                backgroundImage: `url('${heroImageUrl}')`, 
+                backgroundSize: 'cover', 
+                backgroundPosition: 'center', 
+                backgroundRepeat: 'no-repeat' 
+              }}
             >
-              {/* Opacité augmentée à 75% pour réduire la visibilité de l'image derrière le texte */}
-              <div className="absolute inset-0 bg-black bg-opacity-75"></div>
+              {/* Opacité réduite à 50% pour que l'image soit visible tout en gardant le texte lisible */}
+              <div className="absolute inset-0 bg-black bg-opacity-50"></div>
               <div className="relative z-10">
-                <h1 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-lg">Bienvenue au RETECHCI</h1>
-                <p className="text-lg md:text-xl max-w-2xl drop-shadow-lg">Le réseau des professionnels du cinéma et de l'audiovisuel en Côte d'Ivoire.</p>
+                <h1 className="text-4xl md:text-5xl font-extrabold mb-4 drop-shadow-lg">{siteConfig.heroTitle || t('home.heroTitle')}</h1>
+                <p className="text-lg md:text-xl max-w-2xl drop-shadow-lg">{siteConfig.heroSubtitle || t('home.heroSubtitle')}</p>
                 <Link to="/technicians" className="mt-12 inline-block bg-brand-red text-white px-6 py-3 rounded-md text-lg font-semibold hover:bg-opacity-80 transition-colors shadow-lg">
-                  Trouver un Technicien
+                  {t('home.cta')}
                 </Link>
               </div>
             </div>
 
-            {/* Agenda Section (NOUVEAU - PLACÉ EN HAUT) */}
-            <section className="mb-12 bg-gradient-to-br from-brand-gray to-gray-900 rounded-lg p-8 shadow-xl border border-gray-700">
-                 <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center">
-                        <span className="text-3xl mr-3">📅</span>
-                        <h2 className="text-3xl font-bold text-white">Agenda du Réseau</h2>
-                    </div>
-                    <Link to="/events" className="text-brand-red font-semibold hover:underline text-sm bg-brand-dark px-4 py-2 rounded-full">Voir tout l'agenda &rarr;</Link>
-                </div>
-                 {isLoading ? <div className="text-center">Chargement...</div> :
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {upcomingEvents.map(event => (
-                             <Link to="/events" key={event.id} className="bg-brand-dark p-4 rounded-md border-l-4 border-brand-red hover:bg-gray-800 transition-all hover:-translate-y-1 cursor-pointer">
-                                <div className="text-brand-red font-bold text-lg mb-1">{new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</div>
-                                <h3 className="font-bold text-white text-lg mb-2 line-clamp-1">{event.title}</h3>
-                                <div className="flex items-center text-gray-400 text-sm">
-                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                     <span className="truncate">{event.location}</span>
-                                </div>
-                            </Link>
-                        ))}
-                        {upcomingEvents.length === 0 && <p className="text-gray-500 col-span-3 text-center">Aucun événement à venir.</p>}
-                    </div>
-                }
-            </section>
-
-             {/* Forum Preview (NOUVEAU - PLACÉ EN HAUT) */}
-            <section className="mb-16">
-                <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
-                     <div className="flex items-center">
-                         <span className="text-3xl mr-3">💬</span>
-                         <h2 className="text-3xl font-bold">Discussions Récentes</h2>
-                     </div>
-                     <Link to="/forum" className="text-brand-red font-semibold hover:underline text-sm">Accéder au Forum &rarr;</Link>
-                </div>
-                 {isLoading ? <div className="text-center">Chargement...</div> :
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {recentTopics.map(topic => (
-                             <Link to="/forum" key={topic.id} className="block bg-brand-gray p-5 rounded-lg hover:bg-gray-800 transition-colors group border border-gray-800 hover:border-brand-red">
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${topic.category === 'Annonces' ? 'bg-yellow-500 text-black' : 'bg-blue-900 text-blue-200'}`}>{topic.category}</span>
-                                </div>
-                                <h3 className="font-bold text-white text-lg mb-2 group-hover:text-brand-red transition-colors line-clamp-2">{topic.title}</h3>
-                                <div className="flex items-center mt-4 text-xs text-gray-500 border-t border-gray-700 pt-3">
-                                    <div className="flex items-center flex-1">
-                                         <img src={topic.authorAvatar || `https://ui-avatars.com/api/?name=${topic.authorName}&background=random`} alt={topic.authorName} className="w-5 h-5 rounded-full mr-2" />
-                                         <span>{topic.authorName}</span>
-                                    </div>
-                                    <span className="flex items-center">
-                                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                         {topic.repliesCount}
-                                    </span>
-                                </div>
-                            </Link>
-                        ))}
-                         {recentTopics.length === 0 && <p className="text-gray-500 text-center col-span-3">Aucune discussion récente.</p>}
-                    </div>
-                }
-            </section>
-
             {/* Featured Technicians */}
-            <section className="mb-16">
-                <h2 className="text-3xl font-bold text-center mb-8">Nos Techniciens à la Une</h2>
+            <section className="mb-16 relative z-10">
+                <h2 className="text-3xl font-bold text-center mb-8">{t('home.featuredTechs')}</h2>
                 {isLoading ? <div className="text-center">Chargement...</div> :
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             {featuredTechnicians.map(tech => (
-                                <Link to="/technicians" key={tech.id}><TechnicianCard technician={tech} /></Link>
+                                <Link to="/directory/technicians" key={tech.id}><TechnicianCard technician={tech} /></Link>
                             ))}
                         </div>
                         <div className="text-center mt-8">
-                            <Link to="/technicians" className="text-brand-red font-semibold hover:underline">
-                                Voir tout l'annuaire &rarr;
+                            <Link to="/directory/technicians" className="text-brand-red font-semibold hover:underline">
+                                {t('home.seeAll')} &rarr;
                             </Link>
                         </div>
                     </>
@@ -317,8 +275,8 @@ const HomePage: React.FC = () => {
             {!isLoading && <StatsSection memberCount={technicians.length} />}
 
             {/* Latest News */}
-            <section className="mb-16">
-                <h2 className="text-3xl font-bold text-center mb-8">Dernières Actualités</h2>
+            <section className="my-16">
+                <h2 className="text-3xl font-bold text-center mb-8">{t('home.latestNews')}</h2>
                  {isLoading ? <div className="text-center">Chargement...</div> :
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -328,7 +286,7 @@ const HomePage: React.FC = () => {
                         </div>
                         <div className="text-center mt-8">
                             <Link to="/news" className="text-brand-red font-semibold hover:underline">
-                                Toutes les actualités &rarr;
+                                {t('home.seeAllNews')} &rarr;
                             </Link>
                         </div>
                     </>
@@ -336,8 +294,8 @@ const HomePage: React.FC = () => {
             </section>
             
             {/* Videos Section */}
-            <section className="mb-16">
-                <h2 className="text-3xl font-bold text-center mb-8">Nos Vidéos</h2>
+            <section className="my-16">
+                <h2 className="text-3xl font-bold text-center mb-8">{t('home.videos')}</h2>
                  {isLoading ? <div className="text-center">Chargement...</div> :
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                         {videos.slice(0, 6).map(video => (
@@ -349,8 +307,8 @@ const HomePage: React.FC = () => {
 
             {/* Partners Section */}
             <section className="my-16">
-                <h2 className="text-3xl font-bold text-center mb-4">Nos Partenaires</h2>
-                <p className="text-center text-gray-400 mb-8">Ils nous font confiance et soutiennent le cinéma ivoirien.</p>
+                <h2 className="text-3xl font-bold text-center mb-4">{t('home.partners')}</h2>
+                <p className="text-center text-gray-400 mb-8">{t('home.partnersText')}</p>
                  {isLoading ? <div className="text-center">Chargement...</div> : <PartnersMarquee partners={partners} />}
             </section>
 

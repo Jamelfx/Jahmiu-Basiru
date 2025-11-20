@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Member, FinancialTransaction, UserRole, MembershipApplication, ApplicationStatus, MemberStatus, AdminMessage, Availability, LiveEvent, LiveEventAccess } from '../types/types';
+import { Member, FinancialTransaction, UserRole, MembershipApplication, ApplicationStatus, MemberStatus, AdminMessage, Availability, LiveEvent, LiveEventAccess, SiteConfig } from '../types/types';
 import { ALL_USER_ROLES } from '../constants/constants';
 import apiClient from '../api/client';
 
@@ -15,7 +15,7 @@ const AdminCard: React.FC<{ title?: string; children: React.ReactNode; className
     </div>
 );
 
-type AdminTab = 'candidatures' | 'membres' | 'finances' | 'convocations' | 'messagerie' | 'direct';
+type AdminTab = 'candidatures' | 'membres' | 'finances' | 'convocations' | 'messagerie' | 'direct' | 'site';
 
 const ApplicationDetailsModal: React.FC<{ application: MembershipApplication | null; onClose: () => void; }> = ({ application, onClose }) => {
     if (!application) return null;
@@ -299,6 +299,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ currentUser }) => {
     const [adminMessages, setAdminMessages] = useState<AdminMessage[]>([]);
     const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
     const [liveEvent, setLiveEvent] = useState<LiveEvent | null>(null);
+    const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -311,17 +312,19 @@ const AdminPage: React.FC<AdminPageProps> = ({ currentUser }) => {
     const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
     
     const [liveEventForm, setLiveEventForm] = useState<Partial<LiveEvent>>({});
+    const [siteConfigForm, setSiteConfigForm] = useState<Partial<SiteConfig>>({});
 
     useEffect(() => {
         const fetchAdminData = async () => {
             try {
                 setIsLoading(true);
-                const [membersData, appsData, messagesData, transactionsData, eventData] = await Promise.all([
+                const [membersData, appsData, messagesData, transactionsData, eventData, configData] = await Promise.all([
                     apiClient.get('/api/technicians'),
                     apiClient.get('/api/admin/applications'),
                     apiClient.get('/api/admin/messages'),
                     apiClient.get('/api/admin/transactions'),
                     apiClient.get('/api/live/event'),
+                    apiClient.get('/api/config'),
                 ]);
                 setAllMembers(membersData);
                 setApplications(appsData);
@@ -329,6 +332,8 @@ const AdminPage: React.FC<AdminPageProps> = ({ currentUser }) => {
                 setTransactions(transactionsData);
                 setLiveEvent(eventData);
                 setLiveEventForm(eventData || {});
+                setSiteConfig(configData);
+                setSiteConfigForm(configData || {});
             } catch (error) {
                 console.error("Erreur lors de la récupération des données d'administration:", error);
                 showNotification("Impossible de charger les données.", 'error');
@@ -352,6 +357,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ currentUser }) => {
     const canChangeStatus = userRole === 'Directeur Exécutif';
     const canChangeRole = userRole === 'Directeur Exécutif';
     const canManageLive = userRole === 'Directeur Exécutif' || userRole === 'Président du CA';
+    const canManageSite = userRole === 'Directeur Exécutif' || userRole === 'Président du CA' || userRole === 'Secrétaire à la communication';
     const canViewMessages = [
         'Directeur Exécutif', 'Président du CA', 'Secrétaire Général', 
         'Secrétaire Général Adjoint', 'Secrétaire à la communication', 
@@ -540,6 +546,34 @@ const AdminPage: React.FC<AdminPageProps> = ({ currentUser }) => {
             showNotification("Les informations du direct ont été mises à jour.");
         } catch (error) {
             showNotification("Erreur lors de la mise à jour du direct.", "error");
+        }
+    };
+
+    // --- Site Config Management ---
+    const handleSiteConfigFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setSiteConfigForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleHeroImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSiteConfigForm(prev => ({ ...prev, heroImageUrl: reader.result as string }));
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    };
+
+    const handleSiteConfigSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const updatedConfig = await apiClient.put('/api/admin/config', siteConfigForm);
+            setSiteConfig(updatedConfig);
+            setSiteConfigForm(updatedConfig);
+            showNotification("La configuration du site a été mise à jour.");
+        } catch (error) {
+            showNotification("Erreur lors de la mise à jour de la configuration.", "error");
         }
     };
     
@@ -769,6 +803,54 @@ const AdminPage: React.FC<AdminPageProps> = ({ currentUser }) => {
                          </form>
                     </AdminCard>
                 );
+            case 'site':
+                return (
+                    <AdminCard title="Configuration du Site Web">
+                         <form onSubmit={handleSiteConfigSubmit} className="space-y-6">
+                            <div className="border-b border-gray-700 pb-4">
+                                <h3 className="text-lg font-medium text-white mb-2">Section d'Accueil (Hero)</h3>
+                                <p className="text-sm text-gray-400 mb-4">Modifiez l'image et les textes principaux de la page d'accueil.</p>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label htmlFor="heroImageUrl" className="block text-sm font-medium text-gray-300">URL de l'image de fond</label>
+                                        <div className="flex gap-2">
+                                             <input type="text" name="heroImageUrl" id="heroImageUrl" value={siteConfigForm.heroImageUrl || ''} onChange={handleSiteConfigFormChange} className="mt-1 block w-full bg-brand-dark border-gray-600 rounded-md p-2 focus:ring-brand-red focus:border-brand-red"/>
+                                             <label htmlFor="heroImageUpload" className="mt-1 cursor-pointer bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center justify-center whitespace-nowrap">
+                                                <span>Uploader</span>
+                                                <input type="file" id="heroImageUpload" onChange={handleHeroImageUpload} className="hidden" accept="image/*" />
+                                             </label>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">Vous pouvez coller une URL externe ou uploader une image locale (simulation).</p>
+                                    </div>
+                                    
+                                    {siteConfigForm.heroImageUrl && (
+                                        <div className="mt-2">
+                                            <p className="text-sm text-gray-400 mb-1">Aperçu :</p>
+                                            <img src={siteConfigForm.heroImageUrl} alt="Aperçu Hero" className="w-full h-40 object-cover rounded-md border border-gray-600" />
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label htmlFor="heroTitle" className="block text-sm font-medium text-gray-300">Titre Principal</label>
+                                        <input type="text" name="heroTitle" id="heroTitle" value={siteConfigForm.heroTitle || ''} onChange={handleSiteConfigFormChange} className="mt-1 block w-full bg-brand-dark border-gray-600 rounded-md p-2 focus:ring-brand-red focus:border-brand-red"/>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="heroSubtitle" className="block text-sm font-medium text-gray-300">Sous-titre</label>
+                                        <textarea name="heroSubtitle" id="heroSubtitle" rows={2} value={siteConfigForm.heroSubtitle || ''} onChange={handleSiteConfigFormChange} className="mt-1 block w-full bg-brand-dark border-gray-600 rounded-md p-2 focus:ring-brand-red focus:border-brand-red"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <button type="submit" className="w-full bg-brand-red text-white font-bold py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">
+                                    Mettre à jour le Site
+                                </button>
+                            </div>
+                         </form>
+                    </AdminCard>
+                );
             default:
                 return null;
         }
@@ -817,6 +899,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ currentUser }) => {
                     </TabButton>
                 )}
                  {canManageLive && <TabButton tabId="direct" label="Gestion du Direct" />}
+                 {canManageSite && <TabButton tabId="site" label="Site Web" />}
             </div>
             
             <div>

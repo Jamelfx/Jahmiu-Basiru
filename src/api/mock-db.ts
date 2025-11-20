@@ -2,13 +2,13 @@
 import {
     Member, NewsArticle, JobSalary, Video, Location, Costume, Prop, RentalCompany, Partner, Availability, Film,
     FinancialTransaction, MembershipApplication, ApplicationStatus, AdminMessage, MemberStatus, UserRole,
-    LiveEvent, LiveChatMessage, AppEvent, ForumTopic, Notification
+    LiveEvent, LiveChatMessage, AppEvent, ForumTopic, Notification, SiteConfig
 } from '../types/types';
 
 import {
     TECHNICIANS_DATA, NEWS_DATA, VIDEOS_DATA, PARTNERS_DATA, LOCATIONS_DATA, COSTUMES_DATA, PROPS_DATA,
     RENTAL_COMPANIES_DATA, SALARY_DATA, MEMBERSHIP_APPLICATIONS_DATA, FINANCIAL_TRANSACTIONS_DATA, ADMIN_MESSAGES_DATA,
-    LIVE_EVENT_DATA, LIVE_CHAT_MESSAGES, EVENTS_DATA, FORUM_TOPICS_DATA, NOTIFICATIONS_DATA
+    LIVE_EVENT_DATA, LIVE_CHAT_MESSAGES, EVENTS_DATA, FORUM_TOPICS_DATA, NOTIFICATIONS_DATA, SITE_CONFIG_DATA
 } from './mock-data';
 
 // Initialize in-memory store with deep copies to prevent mutation of original constants
@@ -29,6 +29,7 @@ let liveChatMessages: LiveChatMessage[] = JSON.parse(JSON.stringify(LIVE_CHAT_ME
 let events: AppEvent[] = JSON.parse(JSON.stringify(EVENTS_DATA));
 let forumTopics: ForumTopic[] = JSON.parse(JSON.stringify(FORUM_TOPICS_DATA));
 let notifications: Notification[] = JSON.parse(JSON.stringify(NOTIFICATIONS_DATA));
+let siteConfig: SiteConfig = { ...SITE_CONFIG_DATA };
 
 
 const resolve = <T>(data: T): Promise<T> => Promise.resolve(data);
@@ -53,6 +54,7 @@ export const dbGetLiveChatMessages = () => resolve(liveChatMessages);
 export const dbGetEvents = () => resolve(events);
 export const dbGetForumTopics = () => resolve(forumTopics);
 export const dbGetNotifications = (userId: number) => resolve(notifications.filter(n => n.userId === userId));
+export const dbGetSiteConfig = () => resolve(siteConfig);
 
 
 // --- Write operations ---
@@ -296,3 +298,8 @@ export const dbMarkNotificationRead = (notifId: number): Promise<void> => {
     if (notif) notif.read = true;
     return resolve(undefined);
 }
+
+export const dbUpdateSiteConfig = (newConfig: Partial<SiteConfig>): Promise<SiteConfig> => {
+    siteConfig = { ...siteConfig, ...newConfig };
+    return resolve(siteConfig);
+};

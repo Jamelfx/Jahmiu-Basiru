@@ -40,6 +40,8 @@ const mockApiClient: ApiClient = {
 
     // Public routes don't need a token
     switch (path) {
+      case '/api/config':
+        return mockDb.dbGetSiteConfig();
       case '/api/technicians':
         return mockDb.dbGetAllTechnicians();
       case '/api/news':
@@ -150,7 +152,10 @@ const mockApiClient: ApiClient = {
     const readNotifRegex = /^\/api\/notifications\/(\d+)\/read$/;
     
     let match;
-
+    
+    if (path === '/api/admin/config') {
+        return mockDb.dbUpdateSiteConfig(data);
+    }
     if (path === '/api/admin/live-event') {
         return mockDb.dbUpdateLiveEvent(data as Partial<LiveEvent>);
     }
